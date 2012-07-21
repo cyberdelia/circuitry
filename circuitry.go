@@ -11,8 +11,8 @@ type CircuitBreaker struct {
 	FailCounter  int
 	FailMax      int
 	ResetTimeout time.Duration
-	State        circuitState
-	StateLock    *sync.Mutex
+	state        circuitState
+	lock         *sync.Mutex
 }
 
 // Create a new circuit breaker with failMax failures and a resetTimeout timeout 
@@ -21,48 +21,48 @@ func Breaker(failMax int, resetTimeout time.Duration) *CircuitBreaker {
 	b.FailCounter = 0
 	b.FailMax = failMax
 	b.ResetTimeout = resetTimeout
-	b.StateLock = new(sync.Mutex)
-	b.State = &closedCircuit{b}
+	b.lock = new(sync.Mutex)
+	b.state = &closedCircuit{b}
 	return b
 }
 
 // Reports if the circuit is closed
 func (b *CircuitBreaker) IsClosed() bool {
-	return b.State.BeforeCall()
+	return b.state.BeforeCall()
 }
 
 // Reports if the circuit is open
 func (b *CircuitBreaker) IsOpen() bool {
-	return !b.State.BeforeCall()
+	return !b.state.BeforeCall()
 }
 
 // Pass error to the to the circuit breaker
 func (b *CircuitBreaker) Error(err error) {
 	if err == nil {
-		b.State.HandleSuccess()
+		b.state.HandleSuccess()
 	} else {
-		b.State.HandleFailure()
+		b.state.HandleFailure()
 	}
 }
 
 // Close the circuit
 func (b *CircuitBreaker) Close() {
-	b.StateLock.Lock()
+	b.lock.Lock()
 	b.FailCounter = 0
-	b.State = &closedCircuit{b}
-	b.StateLock.Unlock()
+	b.state = &closedCircuit{b}
+	b.lock.Unlock()
 }
 
 // Open the circuit
 func (b *CircuitBreaker) Open() {
-	b.StateLock.Lock()
-	b.State = &openCircuit{time.Now(), b}
-	b.StateLock.Unlock()
+	b.lock.Lock()
+	b.state = &openCircuit{time.Now(), b}
+	b.lock.Unlock()
 }
 
 // Half-open the circuit
 func (b *CircuitBreaker) HalfOpen() {
-	b.StateLock.Lock()
-	b.State = &halfopenCircuit{b}
-	b.StateLock.Unlock()
+	b.lock.Lock()
+	b.state = &halfopenCircuit{b}
+	b.lock.Unlock()
 }
