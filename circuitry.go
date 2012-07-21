@@ -20,7 +20,7 @@ func Breaker(failMax int, resetTimeout time.Duration) *CircuitBreaker {
 	b := new(CircuitBreaker)
 	b.FailCounter = 0
 	b.FailMax = failMax
-	b.ResetTimeout = timeout
+	b.ResetTimeout = resetTimeout
 	b.StateLock = new(sync.Mutex)
 	b.State = &closedCircuit{b}
 	return b
