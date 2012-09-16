@@ -17,10 +17,10 @@ type CircuitBreaker struct {
 
 // Create a new circuit breaker with failMax failures and a resetTimeout timeout 
 func Breaker(failMax int, resetTimeout time.Duration) *CircuitBreaker {
-	b := new(CircuitBreaker)
-	b.FailCounter = 0
-	b.FailMax = failMax
-	b.ResetTimeout = resetTimeout
+	b := &CircuitBreaker{
+		FailMax:      failMax,
+		ResetTimeout: resetTimeout,
+	}
 	b.state = &closedCircuit{b}
 	return b
 }
