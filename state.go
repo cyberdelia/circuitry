@@ -9,35 +9,35 @@ type circuitState interface {
 }
 
 type closedCircuit struct {
-	Breaker *CircuitBreaker
+	breaker *CircuitBreaker
 }
 
 func (c *closedCircuit) BeforeCall() bool {
-	if c.Breaker.FailCounter >= c.Breaker.FailMax {
-		c.Breaker.Open()
+	if c.breaker.FailCounter >= c.breaker.FailMax {
+		c.breaker.Open()
 		return false
 	}
 	return true
 }
 
 func (c *closedCircuit) HandleFailure() {
-	c.Breaker.FailCounter++
+	c.breaker.FailCounter++
 }
 
 func (c *closedCircuit) HandleSuccess() {
-	c.Breaker.FailCounter = 0
+	c.breaker.FailCounter = 0
 }
 
 type openCircuit struct {
-	OpenedAt time.Time
-	Breaker  *CircuitBreaker
+	openedAt time.Time
+	breaker  *CircuitBreaker
 }
 
 func (c *openCircuit) BeforeCall() (b bool) {
-	if time.Now().Before(c.OpenedAt.Add(c.Breaker.ResetTimeout)) {
+	if time.Now().Before(c.openedAt.Add(c.breaker.ResetTimeout)) {
 		b = false
 	} else {
-		c.Breaker.HalfOpen()
+		c.breaker.HalfOpen()
 		b = true
 	}
 	return
@@ -48,7 +48,7 @@ func (c *openCircuit) HandleFailure() {}
 func (c *openCircuit) HandleSuccess() {}
 
 type halfopenCircuit struct {
-	Breaker *CircuitBreaker
+	breaker *CircuitBreaker
 }
 
 func (c *halfopenCircuit) BeforeCall() bool {
@@ -56,11 +56,11 @@ func (c *halfopenCircuit) BeforeCall() bool {
 }
 
 func (c *halfopenCircuit) HandleFailure() {
-	c.Breaker.FailCounter++
-	c.Breaker.Open()
+	c.breaker.FailCounter++
+	c.breaker.Open()
 }
 
 func (c *halfopenCircuit) HandleSuccess() {
-	c.Breaker.FailCounter = 0
-	c.Breaker.Close()
+	c.breaker.FailCounter = 0
+	c.breaker.Close()
 }
