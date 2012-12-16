@@ -35,7 +35,7 @@ func Safe() {
 		if e := recover(); e != nil {
 			circuit.Error(e.(error))
 		}
-	}
+	}()
 	if circuit.IsClosed() {
 		MightPanic()
 		circuit.Error(nil)
