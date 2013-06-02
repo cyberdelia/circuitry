@@ -86,7 +86,7 @@ func TestFailAfterTimeout(t *testing.T) {
 		b.Error(DummyError("dummy error"))
 	}
 
-	// Circuit should be open again 
+	// Circuit should be open again
 	assert.Equal(t, b.FailCounter, 4)
 	assert.T(t, b.IsOpen())
 }
@@ -175,5 +175,4 @@ func TestRecovery(t *testing.T) {
 		assert.T(t, b.IsOpen())
 	}()
 	panic(DummyError("dummy error"))
-	b.Error(nil)
 }

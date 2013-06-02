@@ -15,7 +15,7 @@ type CircuitBreaker struct {
 	sync.Mutex
 }
 
-// Create a new circuit breaker with failMax failures and a resetTimeout timeout 
+// Create a new circuit breaker with failMax failures and a resetTimeout timeout
 func Breaker(failMax int, resetTimeout time.Duration) *CircuitBreaker {
 	b := &CircuitBreaker{
 		FailMax:      failMax,
