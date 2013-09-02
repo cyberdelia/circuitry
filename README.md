@@ -19,7 +19,7 @@ import "github.com/cyberdelia/circuitry"
 ## Usage
 
 ```go
-circuit := circuitry.Breaker(5, time.Minute)
+circuit := circuitry.NewBreaker(5, time.Minute)
 if circuit.IsClosed() {
 	err := DangerousStuff()
 	circuit.Error(err) 
@@ -30,7 +30,7 @@ Dealing with panic :
 
 ```go
 func Safe() {
-	circuit := circuitry.Breaker(5, time.Minute)
+	circuit := circuitry.NewBreaker(5, time.Minute)
 	defer func() {
 		if e := recover(); e != nil {
 			circuit.Error(e.(error))
@@ -46,7 +46,7 @@ func Safe() {
 Or if failure is not an error :
 
 ```go
-circuit := circuitry.Breaker(5, time.Minute)
+circuit := circuitry.NewBreaker(5, time.Minute)
 if circuit.IsClosed() {
 	if DangerousStuff() {
 		circuit.Success()

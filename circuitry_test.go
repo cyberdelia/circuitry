@@ -13,7 +13,7 @@ func (e DummyError) Error() string {
 }
 
 func TestSuccess(t *testing.T) {
-	b := Breaker(5, 5e06)
+	b := NewBreaker(5, 5e06)
 	if b.IsClosed() {
 		b.Error(nil)
 	}
@@ -22,7 +22,7 @@ func TestSuccess(t *testing.T) {
 }
 
 func TestOneFail(t *testing.T) {
-	b := Breaker(5, 5e06)
+	b := NewBreaker(5, 5e06)
 	if b.IsClosed() {
 		b.Error(DummyError("dummy error"))
 	}
@@ -31,7 +31,7 @@ func TestOneFail(t *testing.T) {
 }
 
 func TestSuccessAfterFail(t *testing.T) {
-	b := Breaker(5, 5e06)
+	b := NewBreaker(5, 5e06)
 	if b.IsClosed() {
 		b.Error(DummyError("dummy error"))
 	}
@@ -45,7 +45,7 @@ func TestSuccessAfterFail(t *testing.T) {
 }
 
 func TestSeveralFail(t *testing.T) {
-	b := Breaker(3, 5e06)
+	b := NewBreaker(3, 5e06)
 	assert.Equal(t, b.FailMax, 3)
 	if b.IsClosed() {
 		b.Error(DummyError("dummy error"))
@@ -63,7 +63,7 @@ func TestSeveralFail(t *testing.T) {
 }
 
 func TestFailAfterTimeout(t *testing.T) {
-	b := Breaker(3, 50e6)
+	b := NewBreaker(3, 50e6)
 	if b.IsClosed() {
 		b.Error(DummyError("dummy error"))
 	}
@@ -92,7 +92,7 @@ func TestFailAfterTimeout(t *testing.T) {
 }
 
 func TestSuccessAfterTimeout(t *testing.T) {
-	b := Breaker(3, 5e06)
+	b := NewBreaker(3, 5e06)
 	if b.IsClosed() {
 		b.Error(DummyError("dummy error"))
 	}
@@ -121,7 +121,7 @@ func TestSuccessAfterTimeout(t *testing.T) {
 }
 
 func TestFailureHalfOpen(t *testing.T) {
-	b := Breaker(3, 5e06)
+	b := NewBreaker(3, 5e06)
 	b.HalfOpen()
 	assert.Equal(t, b.FailCounter, 0)
 	assert.T(t, b.IsClosed())
@@ -135,7 +135,7 @@ func TestFailureHalfOpen(t *testing.T) {
 }
 
 func TestSuccessHalfOpen(t *testing.T) {
-	b := Breaker(3, 5e06)
+	b := NewBreaker(3, 5e06)
 	b.HalfOpen()
 	assert.Equal(t, b.FailCounter, 0)
 	assert.T(t, b.IsClosed())
@@ -149,7 +149,7 @@ func TestSuccessHalfOpen(t *testing.T) {
 }
 
 func TestClose(t *testing.T) {
-	b := Breaker(3, 5e06)
+	b := NewBreaker(3, 5e06)
 	b.Error(DummyError("dummy error"))
 	b.Error(DummyError("dummy error"))
 	b.Error(DummyError("dummy error"))
@@ -166,7 +166,7 @@ func TestClose(t *testing.T) {
 }
 
 func TestRecovery(t *testing.T) {
-	b := Breaker(1, 5e06)
+	b := NewBreaker(1, 5e06)
 	defer func() {
 		if e := recover(); e != nil {
 			b.Error(e.(error))
