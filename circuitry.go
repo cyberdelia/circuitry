@@ -8,18 +8,19 @@ import (
 
 // CircuitBreaker represents a circuit breaker
 type CircuitBreaker struct {
-	FailCounter  int
-	FailMax      int
-	ResetTimeout time.Duration
+	failures     *counter
+	failMax      uint64
+	resetTimeout time.Duration
 	state        circuitState
 	sync.Mutex
 }
 
 // Create a new circuit breaker with failMax failures and a resetTimeout timeout
-func NewBreaker(failMax int, resetTimeout time.Duration) *CircuitBreaker {
+func NewBreaker(failMax uint64, resetTimeout time.Duration) *CircuitBreaker {
 	b := &CircuitBreaker{
-		FailMax:      failMax,
-		ResetTimeout: resetTimeout,
+		failMax:      failMax,
+		resetTimeout: resetTimeout,
+		failures:     NewCounter(0),
 	}
 	b.state = &closedCircuit{b}
 	return b
@@ -38,9 +39,9 @@ func (b *CircuitBreaker) IsOpen() bool {
 // Pass error to the to the circuit breaker
 func (b *CircuitBreaker) Error(err error) {
 	if err == nil {
-		b.state.HandleSuccess()
+		b.Success()
 	} else {
-		b.state.HandleFailure()
+		b.Failure()
 	}
 }
 
@@ -58,7 +59,7 @@ func (b *CircuitBreaker) Failure() {
 func (b *CircuitBreaker) Close() {
 	b.Lock()
 	defer b.Unlock()
-	b.FailCounter = 0
+	b.failures.Reset()
 	b.state = &closedCircuit{b}
 }
 

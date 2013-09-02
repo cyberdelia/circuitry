@@ -13,7 +13,7 @@ type closedCircuit struct {
 }
 
 func (c *closedCircuit) BeforeCall() bool {
-	if c.breaker.FailCounter >= c.breaker.FailMax {
+	if c.breaker.failures.Value() >= c.breaker.failMax {
 		c.breaker.Open()
 		return false
 	}
@@ -21,11 +21,11 @@ func (c *closedCircuit) BeforeCall() bool {
 }
 
 func (c *closedCircuit) HandleFailure() {
-	c.breaker.FailCounter++
+	c.breaker.failures.Increment()
 }
 
 func (c *closedCircuit) HandleSuccess() {
-	c.breaker.FailCounter = 0
+	c.breaker.failures.Reset()
 }
 
 type openCircuit struct {
@@ -34,7 +34,7 @@ type openCircuit struct {
 }
 
 func (c *openCircuit) BeforeCall() (b bool) {
-	if time.Now().Before(c.openedAt.Add(c.breaker.ResetTimeout)) {
+	if time.Now().Before(c.openedAt.Add(c.breaker.resetTimeout)) {
 		b = false
 	} else {
 		c.breaker.HalfOpen()
@@ -56,11 +56,11 @@ func (c *halfopenCircuit) BeforeCall() bool {
 }
 
 func (c *halfopenCircuit) HandleFailure() {
-	c.breaker.FailCounter++
+	c.breaker.failures.Increment()
 	c.breaker.Open()
 }
 
 func (c *halfopenCircuit) HandleSuccess() {
-	c.breaker.FailCounter = 0
+	c.breaker.failures.Reset()
 	c.breaker.Close()
 }
