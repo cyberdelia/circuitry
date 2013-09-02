@@ -8,11 +8,6 @@ type counter struct {
 	c uint64
 }
 
-// NewCounter makes a new counter initialized to n.
-func NewCounter(n uint64) *counter {
-	return &counter{n}
-}
-
 func (c *counter) Value() uint64 {
 	return atomic.LoadUint64(&c.c)
 }

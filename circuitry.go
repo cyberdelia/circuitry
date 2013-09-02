@@ -8,7 +8,7 @@ import (
 
 // CircuitBreaker represents a circuit breaker
 type CircuitBreaker struct {
-	failures     *counter
+	failures     counter
 	failMax      uint64
 	resetTimeout time.Duration
 	state        circuitState
@@ -20,7 +20,6 @@ func NewBreaker(failMax uint64, resetTimeout time.Duration) *CircuitBreaker {
 	b := &CircuitBreaker{
 		failMax:      failMax,
 		resetTimeout: resetTimeout,
-		failures:     NewCounter(0),
 	}
 	b.state = &closedCircuit{b}
 	return b
