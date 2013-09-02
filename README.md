@@ -42,3 +42,16 @@ func Safe() {
 	}
 }
 ```
+
+Or if failure is not an error :
+
+```go
+circuit := circuitry.Breaker(5, time.Minute)
+if circuit.IsClosed() {
+	if DangerousStuff() {
+		circuit.Success()
+	} else {
+		circuit.Failure() 
+	}
+}
+```
