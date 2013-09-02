@@ -44,24 +44,34 @@ func (b *CircuitBreaker) Error(err error) {
 	}
 }
 
+// Record a successful operation
+func (b *CircuitBreaker) Success() {
+	b.state.HandleSuccess()
+}
+
+// Record a failure
+func (b *CircuitBreaker) Failure() {
+	b.state.HandleFailure()
+}
+
 // Close the circuit
 func (b *CircuitBreaker) Close() {
 	b.Lock()
+	defer b.Unlock()
 	b.FailCounter = 0
 	b.state = &closedCircuit{b}
-	b.Unlock()
 }
 
 // Open the circuit
 func (b *CircuitBreaker) Open() {
 	b.Lock()
+	defer b.Unlock()
 	b.state = &openCircuit{time.Now(), b}
-	b.Unlock()
 }
 
 // Half-open the circuit
 func (b *CircuitBreaker) HalfOpen() {
 	b.Lock()
+	defer b.Unlock()
 	b.state = &halfopenCircuit{b}
-	b.Unlock()
 }
