@@ -3,7 +3,7 @@ package circuitry
 import (
 	"github.com/bmizerany/assert"
 	"testing"
-	)
+)
 
 func TestCounter(t *testing.T) {
 	var c counter
