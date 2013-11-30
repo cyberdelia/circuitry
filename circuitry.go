@@ -12,7 +12,7 @@ type CircuitBreaker struct {
 	failMax      uint64
 	resetTimeout time.Duration
 	state        circuitState
-	sync.Mutex
+	m            sync.Mutex
 }
 
 // Create a new circuit breaker with failMax failures and a resetTimeout timeout
@@ -56,22 +56,22 @@ func (b *CircuitBreaker) Failure() {
 
 // Close the circuit
 func (b *CircuitBreaker) Close() {
-	b.Lock()
-	defer b.Unlock()
+	b.m.Lock()
+	defer b.m.Unlock()
 	b.failures.Reset()
 	b.state = &closedCircuit{b}
 }
 
 // Open the circuit
 func (b *CircuitBreaker) Open() {
-	b.Lock()
-	defer b.Unlock()
+	b.m.Lock()
+	defer b.m.Unlock()
 	b.state = &openCircuit{time.Now(), b}
 }
 
 // Half-open the circuit
 func (b *CircuitBreaker) HalfOpen() {
-	b.Lock()
-	defer b.Unlock()
+	b.m.Lock()
+	defer b.m.Unlock()
 	b.state = &halfopenCircuit{b}
 }
