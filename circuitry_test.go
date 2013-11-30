@@ -1,16 +1,13 @@
 package circuitry
 
 import (
+	"errors"
 	"github.com/bmizerany/assert"
 	"testing"
 	"time"
 )
 
-type DummyError string
-
-func (e DummyError) Error() string {
-	return string(e)
-}
+var ErrDummy = errors.New("dummy error")
 
 func TestSuccess(t *testing.T) {
 	b := NewBreaker(5, 5e06)
@@ -23,7 +20,7 @@ func TestSuccess(t *testing.T) {
 func TestOneFail(t *testing.T) {
 	b := NewBreaker(5, 5e06)
 	if b.IsClosed() {
-		b.Error(DummyError("dummy error"))
+		b.Error(ErrDummy)
 	}
 	assert.T(t, b.IsClosed())
 }
@@ -31,7 +28,7 @@ func TestOneFail(t *testing.T) {
 func TestSuccessAfterFail(t *testing.T) {
 	b := NewBreaker(5, 5e06)
 	if b.IsClosed() {
-		b.Error(DummyError("dummy error"))
+		b.Error(ErrDummy)
 	}
 	assert.T(t, b.IsClosed())
 	if b.IsClosed() {
@@ -43,13 +40,13 @@ func TestSuccessAfterFail(t *testing.T) {
 func TestSeveralFail(t *testing.T) {
 	b := NewBreaker(3, 5e06)
 	if b.IsClosed() {
-		b.Error(DummyError("dummy error"))
+		b.Error(ErrDummy)
 	}
 	if b.IsClosed() {
-		b.Error(DummyError("dummy error"))
+		b.Error(ErrDummy)
 	}
 	if b.IsClosed() {
-		b.Error(DummyError("dummy error"))
+		b.Error(ErrDummy)
 	}
 
 	// Circuit should open
@@ -59,13 +56,13 @@ func TestSeveralFail(t *testing.T) {
 func TestFailAfterTimeout(t *testing.T) {
 	b := NewBreaker(3, 50e6)
 	if b.IsClosed() {
-		b.Error(DummyError("dummy error"))
+		b.Error(ErrDummy)
 	}
 	if b.IsClosed() {
-		b.Error(DummyError("dummy error"))
+		b.Error(ErrDummy)
 	}
 	if b.IsClosed() {
-		b.Error(DummyError("dummy error"))
+		b.Error(ErrDummy)
 	}
 
 	// Circuit should be open
@@ -76,7 +73,7 @@ func TestFailAfterTimeout(t *testing.T) {
 	assert.T(t, b.IsClosed())
 
 	if b.IsClosed() {
-		b.Error(DummyError("dummy error"))
+		b.Error(ErrDummy)
 	}
 
 	// Circuit should be open again
@@ -86,13 +83,13 @@ func TestFailAfterTimeout(t *testing.T) {
 func TestSuccessAfterTimeout(t *testing.T) {
 	b := NewBreaker(3, 5e06)
 	if b.IsClosed() {
-		b.Error(DummyError("dummy error"))
+		b.Error(ErrDummy)
 	}
 	if b.IsClosed() {
-		b.Error(DummyError("dummy error"))
+		b.Error(ErrDummy)
 	}
 	if b.IsClosed() {
-		b.Error(DummyError("dummy error"))
+		b.Error(ErrDummy)
 	}
 
 	// Circuit should be open
@@ -115,7 +112,7 @@ func TestFailureHalfOpen(t *testing.T) {
 	b.HalfOpen()
 	assert.T(t, b.IsClosed())
 	if b.IsClosed() {
-		b.Error(DummyError("dummy error"))
+		b.Error(ErrDummy)
 	}
 
 	// Circuit should be open
@@ -136,9 +133,9 @@ func TestSuccessHalfOpen(t *testing.T) {
 
 func TestClose(t *testing.T) {
 	b := NewBreaker(3, 5e06)
-	b.Error(DummyError("dummy error"))
-	b.Error(DummyError("dummy error"))
-	b.Error(DummyError("dummy error"))
+	b.Error(ErrDummy)
+	b.Error(ErrDummy)
+	b.Error(ErrDummy)
 
 	// Circuit should be open
 	assert.T(t, b.IsOpen())
@@ -157,5 +154,5 @@ func TestRecovery(t *testing.T) {
 		}
 		assert.T(t, b.IsOpen())
 	}()
-	panic(DummyError("dummy error"))
+	panic(ErrDummy)
 }
