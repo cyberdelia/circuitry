@@ -2,157 +2,223 @@ package circuitry
 
 import (
 	"errors"
-	"github.com/bmizerany/assert"
 	"testing"
 	"time"
 )
 
 var ErrDummy = errors.New("dummy error")
 
-func TestSuccess(t *testing.T) {
-	b := NewBreaker(5, 5e06)
-	if b.IsClosed() {
-		b.Error(nil)
+func TestTripCircuit(t *testing.T) {
+	b := NewBreaker(40, 0, time.Minute)
+	b.MarkSuccess()
+	b.MarkSuccess()
+	b.MarkSuccess()
+	b.MarkSuccess()
+
+	if !b.Allow() {
+		t.Error("should allow requests")
 	}
-	assert.T(t, b.IsClosed())
+	if b.IsOpen() {
+		t.Error("should be closed")
+	}
+
+	b.MarkFailure()
+	b.MarkFailure()
+	b.MarkFailure()
+	b.MarkFailure()
+
+	if b.Allow() {
+		t.Error("should not allow requests")
+	}
+	if b.IsClosed() {
+		t.Error("should be open")
+	}
 }
 
-func TestOneFail(t *testing.T) {
-	b := NewBreaker(5, 5e06)
-	if b.IsClosed() {
-		b.Error(ErrDummy)
+func TestTripCircuitOnFailuresAboveThreshold(t *testing.T) {
+	b := NewBreaker(40, 0, time.Minute)
+	if !b.Allow() {
+		t.Error("should allow requests")
 	}
-	assert.T(t, b.IsClosed())
+	if b.IsOpen() {
+		t.Error("should be closed")
+	}
+
+	b.MarkSuccess()
+	b.MarkSuccess()
+	b.MarkFailure()
+	b.MarkSuccess()
+	b.MarkFailure()
+	b.MarkFailure()
+	b.MarkSuccess()
+	b.MarkFailure()
+	b.MarkFailure()
+
+	if b.Allow() {
+		t.Error("should not allow requests")
+	}
+	if b.IsClosed() {
+		t.Error("should be open")
+	}
 }
 
-func TestSuccessAfterFail(t *testing.T) {
-	b := NewBreaker(5, 5e06)
-	if b.IsClosed() {
-		b.Error(ErrDummy)
+func TestCircuitDoesNotTripOnFailuresBelowThreshold(t *testing.T) {
+	b := NewBreaker(40, 0, time.Minute)
+	if !b.Allow() {
+		t.Error("should allow requests")
 	}
-	assert.T(t, b.IsClosed())
-	if b.IsClosed() {
-		b.Error(nil)
+	if b.IsOpen() {
+		t.Error("should be closed")
 	}
-	assert.T(t, b.IsClosed())
+
+	b.MarkSuccess()
+	b.MarkSuccess()
+	b.MarkFailure()
+	b.MarkSuccess()
+	b.MarkSuccess()
+	b.MarkSuccess()
+	b.MarkFailure()
+	b.MarkFailure()
+
+	if !b.Allow() {
+		t.Error("should allow requests")
+	}
+	if b.IsOpen() {
+		t.Error("should be closed")
+	}
 }
 
-func TestSeveralFail(t *testing.T) {
-	b := NewBreaker(3, 5e06)
-	if b.IsClosed() {
-		b.Error(ErrDummy)
+func TestSingleTestOnOpenCircuitAfterTimeWindow(t *testing.T) {
+	b := NewBreaker(40, 0, 200*time.Millisecond)
+
+	b.MarkFailure()
+	b.MarkFailure()
+	b.MarkFailure()
+	b.MarkFailure()
+
+	if b.Allow() {
+		t.Error("should not allow requests")
 	}
 	if b.IsClosed() {
-		b.Error(ErrDummy)
-	}
-	if b.IsClosed() {
-		b.Error(ErrDummy)
+		t.Error("should be open")
 	}
 
-	// Circuit should open
-	assert.T(t, b.IsOpen())
+	time.Sleep(250 * time.Millisecond)
+
+	if !b.Allow() {
+		t.Error("should allow one request")
+	}
+	if b.IsClosed() {
+		t.Error("should be open")
+	}
+	if b.Allow() {
+		t.Error("should not allow requests")
+	}
 }
 
-func TestFailAfterTimeout(t *testing.T) {
-	b := NewBreaker(3, 50e6)
-	if b.IsClosed() {
-		b.Error(ErrDummy)
+func TestCircuitClosedAfterSuccess(t *testing.T) {
+	b := NewBreaker(40, 0, 200*time.Millisecond)
+
+	b.MarkFailure()
+	b.MarkFailure()
+	b.MarkFailure()
+	b.MarkShortCircuited()
+
+	if b.Allow() {
+		t.Error("should not allow requests")
 	}
 	if b.IsClosed() {
-		b.Error(ErrDummy)
+		t.Error("should be open")
+	}
+
+	time.Sleep(250 * time.Millisecond)
+
+	if !b.Allow() {
+		t.Error("should allow one request")
 	}
 	if b.IsClosed() {
-		b.Error(ErrDummy)
+		t.Error("should be open")
+	}
+	if b.Allow() {
+		t.Error("should not allow requests")
 	}
 
-	// Circuit should be open
-	assert.T(t, b.IsOpen())
+	b.MarkSuccess()
 
-	// Wait and check if circuit is half-open
-	time.Sleep(50e6)
-	assert.T(t, b.IsClosed())
-
-	if b.IsClosed() {
-		b.Error(ErrDummy)
+	if !b.Allow() {
+		t.Error("should allow requests")
 	}
-
-	// Circuit should be open again
-	assert.T(t, b.IsOpen())
+	if b.IsOpen() {
+		t.Error("should be closed")
+	}
 }
 
-func TestSuccessAfterTimeout(t *testing.T) {
-	b := NewBreaker(3, 5e06)
-	if b.IsClosed() {
-		b.Error(ErrDummy)
-	}
-	if b.IsClosed() {
-		b.Error(ErrDummy)
-	}
-	if b.IsClosed() {
-		b.Error(ErrDummy)
-	}
+func TestLowVolumeDoesNotTripCircuit(t *testing.T) {
+	b := NewBreaker(40, 5, 200*time.Millisecond)
 
-	// Circuit should be open
-	assert.T(t, b.IsOpen())
+	b.MarkFailure()
+	b.MarkFailure()
+	b.MarkFailure()
+	b.MarkFailure()
 
-	// Wait and check if circuit is half-open
-	time.Sleep(50e6)
-	assert.T(t, b.IsClosed())
-
-	if b.IsClosed() {
-		b.Error(nil)
+	if !b.Allow() {
+		t.Error("should allow requests")
 	}
-
-	// Circuit should be closed again
-	assert.T(t, b.IsClosed())
+	if b.IsOpen() {
+		t.Error("should be closed")
+	}
 }
 
-func TestFailureHalfOpen(t *testing.T) {
-	b := NewBreaker(3, 5e06)
-	b.HalfOpen()
-	assert.T(t, b.IsClosed())
+func TestCircuitForceOpen(t *testing.T) {
+	b := NewBreaker(40, 0, 200*time.Millisecond)
+	b.ForceOpen()
+
+	if b.Allow() {
+		t.Error("should not allow requests")
+	}
 	if b.IsClosed() {
-		b.Error(ErrDummy)
+		t.Error("should be open")
 	}
 
-	// Circuit should be open
-	assert.T(t, b.IsOpen())
-}
+	time.Sleep(250 * time.Millisecond)
+	b.MarkSuccess()
 
-func TestSuccessHalfOpen(t *testing.T) {
-	b := NewBreaker(3, 5e06)
-	b.HalfOpen()
-	assert.T(t, b.IsClosed())
-	if b.IsClosed() {
-		b.Error(nil)
+	if b.Allow() {
+		t.Error("should not allow request")
 	}
-
-	// Circuit should be open
-	assert.T(t, b.IsClosed())
-}
-
-func TestClose(t *testing.T) {
-	b := NewBreaker(3, 5e06)
-	b.Error(ErrDummy)
-	b.Error(ErrDummy)
-	b.Error(ErrDummy)
-
-	// Circuit should be open
-	assert.T(t, b.IsOpen())
+	if b.IsClosed() {
+		t.Error("should be open")
+	}
 
 	b.Close()
-
-	// Circuit should be closed
-	assert.T(t, b.IsClosed())
+	if !b.Allow() {
+		t.Error("should allow requests")
+	}
+	if b.IsOpen() {
+		t.Error("should be closed")
+	}
 }
 
-func TestRecovery(t *testing.T) {
-	b := NewBreaker(1, 5e06)
-	defer func() {
-		if e := recover(); e != nil {
-			b.Error(e.(error))
-		}
-		assert.T(t, b.IsOpen())
-	}()
-	panic(ErrDummy)
+func TestCircuitForceClose(t *testing.T) {
+	b := NewBreaker(40, 0, 200*time.Millisecond)
+	b.ForceClose()
+
+	if !b.Allow() {
+		t.Error("should allow requests")
+	}
+	if b.IsOpen() {
+		t.Error("should be closed")
+	}
+
+	b.MarkFailure()
+	b.MarkFailure()
+	b.MarkFailure()
+	b.MarkFailure()
+
+	if !b.Allow() {
+		t.Error("should allow requests")
+	}
+	if b.IsOpen() {
+		t.Error("should be closed")
+	}
 }
