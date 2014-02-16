@@ -1,4 +1,7 @@
 language: go
+go:
+  - 1.2
+  - tip
 install: go get github.com/bmizerany/assert
 script: go test -v github.com/cyberdelia/circuitry
 
