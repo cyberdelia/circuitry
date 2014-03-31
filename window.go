@@ -48,17 +48,17 @@ func (b *bucket) ShortCircuited() int64 {
 	return atomic.LoadInt64(&b.shortcircuits)
 }
 
-type window struct {
+type Window struct {
 	size int
 	ring *ring.Ring
 	m    sync.RWMutex
 }
 
-func newWindow(size int, d time.Duration) (*window, error) {
+func NewWindow(size int, d time.Duration) (*Window, error) {
 	if int(d.Nanoseconds())%size != 0 {
 		return nil, ErrBucketSize
 	}
-	w := &window{
+	w := &Window{
 		size: size,
 		ring: seed(ring.New(size)),
 	}
@@ -66,7 +66,7 @@ func newWindow(size int, d time.Duration) (*window, error) {
 	return w, nil
 }
 
-func (w *window) tick(d time.Duration) {
+func (w *Window) tick(d time.Duration) {
 	for _ = range time.Tick(d) {
 		w.m.Lock()
 		w.ring = rollup(w.ring)
@@ -84,7 +84,7 @@ func seed(r *ring.Ring) *ring.Ring {
 	return r
 }
 
-func (w *window) MarkShortCircuited() {
+func (w *Window) MarkShortCircuited() {
 	w.m.RLock()
 	defer w.m.RUnlock()
 
@@ -92,7 +92,7 @@ func (w *window) MarkShortCircuited() {
 	bucket.MarkShortCircuited()
 }
 
-func (w *window) MarkSuccess() {
+func (w *Window) MarkSuccess() {
 	w.m.RLock()
 	defer w.m.RUnlock()
 
@@ -100,7 +100,7 @@ func (w *window) MarkSuccess() {
 	bucket.MarkSuccess()
 }
 
-func (w *window) MarkFailure() {
+func (w *Window) MarkFailure() {
 	w.m.RLock()
 	defer w.m.RUnlock()
 
@@ -108,7 +108,7 @@ func (w *window) MarkFailure() {
 	bucket.MarkFailure()
 }
 
-func (w *window) Total() (total int64) {
+func (w *Window) Total() (total int64) {
 	w.m.RLock()
 	defer w.m.RUnlock()
 
@@ -120,7 +120,7 @@ func (w *window) Total() (total int64) {
 	return total
 }
 
-func (w *window) Errors() int64 {
+func (w *Window) Errors() int64 {
 	w.m.RLock()
 	defer w.m.RUnlock()
 
@@ -137,7 +137,7 @@ func (w *window) Errors() int64 {
 	return 0
 }
 
-func (w *window) ShortCircuited() (rejections int64) {
+func (w *Window) ShortCircuited() (rejections int64) {
 	w.m.RLock()
 	defer w.m.RUnlock()
 
@@ -149,7 +149,7 @@ func (w *window) ShortCircuited() (rejections int64) {
 	return rejections
 }
 
-func (w *window) Successes() (successes int64) {
+func (w *Window) Successes() (successes int64) {
 	w.m.RLock()
 	defer w.m.RUnlock()
 
@@ -161,7 +161,7 @@ func (w *window) Successes() (successes int64) {
 	return successes
 }
 
-func (w *window) Failures() (failures int64) {
+func (w *Window) Failures() (failures int64) {
 	w.m.RLock()
 	defer w.m.RUnlock()
 
@@ -173,7 +173,7 @@ func (w *window) Failures() (failures int64) {
 	return failures
 }
 
-func (w *window) Reset() {
+func (w *Window) Reset() {
 	w.m.Lock()
 	defer w.m.Unlock()
 

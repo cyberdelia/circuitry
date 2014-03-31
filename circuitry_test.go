@@ -8,8 +8,13 @@ import (
 
 var ErrDummy = errors.New("dummy error")
 
+func window() *Window {
+	w, _ := NewWindow(10, 10*time.Second)
+	return w
+}
+
 func TestTripCircuit(t *testing.T) {
-	b := NewBreaker(40, 0, time.Minute)
+	b := NewBreaker(40, 0, time.Minute, window())
 	b.MarkSuccess()
 	b.MarkSuccess()
 	b.MarkSuccess()
@@ -36,7 +41,7 @@ func TestTripCircuit(t *testing.T) {
 }
 
 func TestTripCircuitOnFailuresAboveThreshold(t *testing.T) {
-	b := NewBreaker(40, 0, time.Minute)
+	b := NewBreaker(40, 0, time.Minute, window())
 	if !b.Allow() {
 		t.Error("should allow requests")
 	}
@@ -63,7 +68,7 @@ func TestTripCircuitOnFailuresAboveThreshold(t *testing.T) {
 }
 
 func TestCircuitDoesNotTripOnFailuresBelowThreshold(t *testing.T) {
-	b := NewBreaker(40, 0, time.Minute)
+	b := NewBreaker(40, 0, time.Minute, window())
 	if !b.Allow() {
 		t.Error("should allow requests")
 	}
@@ -89,7 +94,7 @@ func TestCircuitDoesNotTripOnFailuresBelowThreshold(t *testing.T) {
 }
 
 func TestSingleTestOnOpenCircuitAfterTimeWindow(t *testing.T) {
-	b := NewBreaker(40, 0, 200*time.Millisecond)
+	b := NewBreaker(40, 0, 200*time.Millisecond, window())
 
 	b.MarkFailure()
 	b.MarkFailure()
@@ -117,7 +122,7 @@ func TestSingleTestOnOpenCircuitAfterTimeWindow(t *testing.T) {
 }
 
 func TestCircuitClosedAfterSuccess(t *testing.T) {
-	b := NewBreaker(40, 0, 200*time.Millisecond)
+	b := NewBreaker(40, 0, 200*time.Millisecond, window())
 
 	b.MarkFailure()
 	b.MarkFailure()
@@ -154,7 +159,7 @@ func TestCircuitClosedAfterSuccess(t *testing.T) {
 }
 
 func TestLowVolumeDoesNotTripCircuit(t *testing.T) {
-	b := NewBreaker(40, 5, 200*time.Millisecond)
+	b := NewBreaker(40, 5, 200*time.Millisecond, window())
 
 	b.MarkFailure()
 	b.MarkFailure()
@@ -170,7 +175,7 @@ func TestLowVolumeDoesNotTripCircuit(t *testing.T) {
 }
 
 func TestCircuitForceOpen(t *testing.T) {
-	b := NewBreaker(40, 0, 200*time.Millisecond)
+	b := NewBreaker(40, 0, 200*time.Millisecond, window())
 	b.ForceOpen()
 
 	if b.Allow() {
@@ -200,7 +205,7 @@ func TestCircuitForceOpen(t *testing.T) {
 }
 
 func TestCircuitForceClose(t *testing.T) {
-	b := NewBreaker(40, 0, 200*time.Millisecond)
+	b := NewBreaker(40, 0, 200*time.Millisecond, window())
 	b.ForceClose()
 
 	if !b.Allow() {

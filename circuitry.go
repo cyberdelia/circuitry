@@ -3,7 +3,8 @@ A circuit breaker
 
 Circuit breaking with go errors:
 
-	circuit := circuitry.NewBreaker(15, 100, time.Minute)
+	w, _ := NewWindow(10, 10*time.Second)
+	circuit := circuitry.NewBreaker(15, 100, time.Minute, w)
 	if circuit.Allow() {
 		err := DangerousStuff()
 		circuit.Error(err)
@@ -27,13 +28,12 @@ type CircuitBreaker struct {
 	openedAt int64
 	forced   int32
 
-	w *window
+	w *Window
 	m sync.RWMutex
 }
 
 // Create a new circuit breaker.
-func NewBreaker(errors, volume int64, timeout time.Duration) *CircuitBreaker {
-	w, _ := newWindow(10, 10*time.Second)
+func NewBreaker(errors, volume int64, timeout time.Duration, w *Window) *CircuitBreaker {
 	return &CircuitBreaker{
 		errors:  errors,
 		volume:  volume,

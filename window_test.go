@@ -21,7 +21,7 @@ func Testbucket(t *testing.T) {
 }
 
 func TestNewWindow(t *testing.T) {
-	w, err := newWindow(10, 10*time.Second)
+	w, err := NewWindow(10, 10*time.Second)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,14 +34,14 @@ func TestNewWindow(t *testing.T) {
 }
 
 func TestBadWindow(t *testing.T) {
-	_, err := newWindow(11, 10*time.Second)
+	_, err := NewWindow(11, 10*time.Second)
 	if err == nil {
 		t.Fatal("should have thrown an error")
 	}
 }
 
 func TestWindowAggregation(t *testing.T) {
-	w, err := newWindow(10, 10*time.Second)
+	w, err := NewWindow(10, 10*time.Second)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func TestWindowAggregation(t *testing.T) {
 }
 
 func TestWindowRollout(t *testing.T) {
-	w, err := newWindow(4, 200*time.Millisecond)
+	w, err := NewWindow(4, 200*time.Millisecond)
 	if err != nil {
 		t.Fatal(err)
 	}
