@@ -59,3 +59,32 @@ if circuit.Allow() {
 }
 ```
 
+Or via a Command :
+
+```go
+type Namer struct {
+	Name string
+}
+
+func (n *Namer) Run() (interface{}, error) {
+	rand.Seed(time.Now().UnixNano())
+	if rand.Intn(4) >= 2 {
+		return nil, fmt.Errorf("can't assign name: %s", n.Name)
+	}
+	return fmt.Sprintf("Your name is %s.", n.Name), nil
+}
+
+func (n *Namer) Fallback() interface{} {
+	return fmt.Sprintf("Hello, %s.", n.Name)
+}
+
+func main() {
+	cmd := &Namer{"Hal"}
+
+	w, _ := circuitry.NewWindow(10, 10*time.Second)
+	circuit := circuitry.NewBreaker(40, 4, time.Minute, w)
+	value := circuitry.Execute(cmd, circuit)
+
+	fmt.Println(value)
+}
+```
