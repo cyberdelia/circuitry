@@ -1,16 +1,14 @@
-/*
-A circuit breaker
-
-Circuit breaking with go errors:
-
-	w, _ := NewWindow(10, 10*time.Second)
-	circuit := circuitry.NewBreaker(15, 100, time.Minute, w)
-	if circuit.Allow() {
-		err := DangerousStuff()
-		circuit.Error(err)
-	}
-
-*/
+// A circuit breaker
+//
+// Circuit breaking with go errors:
+//
+//         w, _ := NewWindow(10, 10*time.Second)
+//         circuit := circuitry.NewBreaker(15, 100, time.Minute, w)
+//         if circuit.Allow() {
+//                 err := DangerousStuff()
+//                 circuit.Error(err)
+//         }
+//
 package circuitry
 
 import (
@@ -90,7 +88,7 @@ func (b *CircuitBreaker) Error(err error) {
 
 // Record a successful operation.
 func (b *CircuitBreaker) MarkSuccess() {
-	b.w.MarkSuccess()
+	b.w.markSuccess()
 	if b.IsForced() {
 		return
 	}
@@ -101,12 +99,12 @@ func (b *CircuitBreaker) MarkSuccess() {
 
 // Record a failure.
 func (b *CircuitBreaker) MarkFailure() {
-	b.w.MarkFailure()
+	b.w.markFailure()
 }
 
 // Record a rejection.
 func (b *CircuitBreaker) MarkShortCircuited() {
-	b.w.MarkShortCircuited()
+	b.w.markShortCircuited()
 }
 
 // Close the circuit.

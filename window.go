@@ -54,15 +54,16 @@ type Window struct {
 	m    sync.RWMutex
 }
 
-func NewWindow(size int, d time.Duration) (*Window, error) {
-	if int(d.Nanoseconds())%size != 0 {
+// Create a new window of duration d containing n buckets.
+func NewWindow(n int, d time.Duration) (*Window, error) {
+	if int(d.Nanoseconds())%n != 0 {
 		return nil, ErrBucketSize
 	}
 	w := &Window{
-		size: size,
-		ring: seed(ring.New(size)),
+		size: n,
+		ring: seed(ring.New(n)),
 	}
-	go w.tick(time.Duration(int(d) / size))
+	go w.tick(time.Duration(int(d) / n))
 	return w, nil
 }
 
@@ -84,7 +85,8 @@ func seed(r *ring.Ring) *ring.Ring {
 	return r
 }
 
-func (w *Window) MarkShortCircuited() {
+// Record a short-circuit.
+func (w *Window) markShortCircuited() {
 	w.m.RLock()
 	defer w.m.RUnlock()
 
@@ -92,7 +94,8 @@ func (w *Window) MarkShortCircuited() {
 	bucket.MarkShortCircuited()
 }
 
-func (w *Window) MarkSuccess() {
+// Record a success.
+func (w *Window) markSuccess() {
 	w.m.RLock()
 	defer w.m.RUnlock()
 
@@ -100,7 +103,8 @@ func (w *Window) MarkSuccess() {
 	bucket.MarkSuccess()
 }
 
-func (w *Window) MarkFailure() {
+// Record a failure.
+func (w *Window) markFailure() {
 	w.m.RLock()
 	defer w.m.RUnlock()
 
@@ -108,6 +112,7 @@ func (w *Window) MarkFailure() {
 	bucket.MarkFailure()
 }
 
+// Return the total number of access (failures, success and short-circuit).
 func (w *Window) Total() (total int64) {
 	w.m.RLock()
 	defer w.m.RUnlock()
@@ -120,6 +125,7 @@ func (w *Window) Total() (total int64) {
 	return total
 }
 
+// Return the percentage of errors (failures and short-circuit).
 func (w *Window) Errors() int64 {
 	w.m.RLock()
 	defer w.m.RUnlock()
@@ -137,18 +143,20 @@ func (w *Window) Errors() int64 {
 	return 0
 }
 
-func (w *Window) ShortCircuited() (rejections int64) {
+// Return the total of short-circuit.
+func (w *Window) ShortCircuited() (shortcircuit int64) {
 	w.m.RLock()
 	defer w.m.RUnlock()
 
 	w.ring.Do(func(i interface{}) {
 		if b, ok := i.(*bucket); ok {
-			rejections += b.ShortCircuited()
+			shortcircuit += b.ShortCircuited()
 		}
 	})
-	return rejections
+	return shortcircuit
 }
 
+// Return the total of successes.
 func (w *Window) Successes() (successes int64) {
 	w.m.RLock()
 	defer w.m.RUnlock()
@@ -161,6 +169,7 @@ func (w *Window) Successes() (successes int64) {
 	return successes
 }
 
+// Return the total of failures.
 func (w *Window) Failures() (failures int64) {
 	w.m.RLock()
 	defer w.m.RUnlock()
@@ -173,6 +182,7 @@ func (w *Window) Failures() (failures int64) {
 	return failures
 }
 
+// Reset window statistics.
 func (w *Window) Reset() {
 	w.m.Lock()
 	defer w.m.Unlock()

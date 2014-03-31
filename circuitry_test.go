@@ -2,6 +2,7 @@ package circuitry
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 )
@@ -225,5 +226,13 @@ func TestCircuitForceClose(t *testing.T) {
 	}
 	if b.IsOpen() {
 		t.Error("should be closed")
+	}
+}
+
+func ExampleNewBreaker() {
+	w, _ := NewWindow(10, 10*time.Second)
+	circuit := NewBreaker(40, 4, time.Minute, w)
+	if circuit.Allow() {
+		circuit.Error(fmt.Errorf("forced error: %s", "example"))
 	}
 }

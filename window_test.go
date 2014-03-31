@@ -46,9 +46,9 @@ func TestWindowAggregation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	w.MarkShortCircuited()
-	w.MarkFailure()
-	w.MarkSuccess()
+	w.markShortCircuited()
+	w.markFailure()
+	w.markSuccess()
 
 	if total := w.Total(); total != 3 {
 		t.Fatalf("total should be 3 got %d", total)
@@ -65,10 +65,15 @@ func TestWindowRollout(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	w.MarkSuccess()
+	w.markSuccess()
 	time.Sleep(225 * time.Millisecond)
 
 	if total := w.Total(); total != 0 {
 		t.Fatalf("total should be zero, got %d", total)
 	}
+}
+
+func ExampleNewWindow() {
+	window, _ := NewWindow(10, 10*time.Second)
+	window.Reset()
 }
