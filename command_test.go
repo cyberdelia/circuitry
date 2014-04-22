@@ -3,6 +3,7 @@ package circuitry
 import (
 	"errors"
 	"testing"
+	"time"
 )
 
 type alwaysFail struct{}
@@ -34,16 +35,16 @@ func (c *alwaysSucceed) Fallback() interface{} {
 }
 
 func TestAlwaysFail(t *testing.T) {
-	p := &Panel{}
-	v := p.Execute(&alwaysFail{})
+	b := NewBreaker(40, 0, time.Minute, window())
+	v := Execute(&alwaysFail{}, b)
 	if v != "fallback" {
 		t.Error("didn't execute fallback")
 	}
 }
 
 func TestAlwaysSucceed(t *testing.T) {
-	p := &Panel{}
-	v := p.Execute(&alwaysSucceed{})
+	b := NewBreaker(40, 0, time.Minute, window())
+	v := Execute(&alwaysSucceed{}, b)
 	if v != "success" {
 		t.Error("the fallback was executed")
 	}
