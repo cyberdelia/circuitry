@@ -48,6 +48,12 @@ func (b *bucket) ShortCircuited() int64 {
 	return atomic.LoadInt64(&b.shortcircuits)
 }
 
+func (b *bucket) Reset() {
+	atomic.StoreInt64(&b.failures, 0)
+	atomic.StoreInt64(&b.successes, 0)
+	atomic.StoreInt64(&b.shortcircuits, 0)
+}
+
 type Window struct {
 	size int
 	ring *ring.Ring
@@ -81,7 +87,11 @@ func rollup(r *ring.Ring) *ring.Ring {
 }
 
 func seed(r *ring.Ring) *ring.Ring {
-	r.Value = new(bucket)
+	if r.Value == nil {
+		r.Value = new(bucket)
+	} else {
+		r.Value.(*bucket).Reset()
+	}
 	return r
 }
 
@@ -187,5 +197,9 @@ func (w *Window) Reset() {
 	w.m.Lock()
 	defer w.m.Unlock()
 
-	w.ring = seed(ring.New(w.size))
+	w.ring.Do(func(i interface{}) {
+		if b, ok := i.(*bucket); ok {
+			b.Reset()
+		}
+	})
 }

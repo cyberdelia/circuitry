@@ -73,6 +73,23 @@ func TestWindowRollout(t *testing.T) {
 	}
 }
 
+func TestWindowReset(t *testing.T) {
+	w, err := NewWindow(10, 10*time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w.markShortCircuited()
+	if total := w.Total(); total != 1 {
+		t.Fatalf("total should be 1 got %d", total)
+	}
+
+	w.Reset()
+	if total := w.Total(); total != 0 {
+		t.Fatalf("total should be 0 got %d", total)
+	}
+}
+
 func ExampleNewWindow() {
 	window, _ := NewWindow(10, 10*time.Second)
 	window.Reset()
