@@ -2,6 +2,7 @@ package circuitry
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 )
@@ -48,4 +49,10 @@ func TestAlwaysSucceed(t *testing.T) {
 	if v != "success" {
 		t.Error("the fallback was executed")
 	}
+}
+
+func ExampleExecute() {
+	b := NewBreaker(40, 0, time.Minute, window())
+	v := Execute(&alwaysSucceed{}, b)
+	fmt.Println(v)
 }
