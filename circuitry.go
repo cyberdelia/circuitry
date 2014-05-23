@@ -81,13 +81,12 @@ func (b *CircuitBreaker) Allow() bool {
 			return atomic.CompareAndSwapInt64(&b.openedAt, openedAt, time.Now().UnixNano())
 		}
 		return false
-	} else {
-		if b.w.Total() >= b.volume && b.w.Errors() >= b.errors {
-			b.Open()
-			return false
-		}
-		return true
 	}
+	if b.w.Total() >= b.volume && b.w.Errors() >= b.errors {
+		b.Open()
+		return false
+	}
+	return true
 }
 
 // Reports if the circuit is closed.
